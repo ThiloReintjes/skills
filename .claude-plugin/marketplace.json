@@ -1,0 +1,16 @@
+{
+  "name": "thilo-skills",
+  "owner": {
+    "name": "Thilo Reintjes",
+    "url": "https://github.com/ThiloReintjes"
+  },
+  "description": "Thilo Reintjes' collection of practical agent skills.",
+  "plugins": [
+    {
+      "name": "thilo-skills",
+      "source": "./",
+      "description": "A concise collection of practical agent skills.",
+      "keywords": ["agent-skills", "engineering", "posthog"]
+    }
+  ]
+}

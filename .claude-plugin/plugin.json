@@ -1,0 +1,13 @@
+{
+  "name": "thilo-skills",
+  "version": "0.1.0",
+  "description": "Thilo Reintjes' collection of practical agent skills.",
+  "author": {
+    "name": "Thilo Reintjes",
+    "url": "https://github.com/ThiloReintjes"
+  },
+  "repository": "https://github.com/ThiloReintjes/agent-skills",
+  "license": "MIT",
+  "keywords": ["agent-skills", "engineering", "posthog"],
+  "skills": ["./skills/integrate-posthog"]
+}
