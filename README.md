@@ -1,12 +1,16 @@
-# PostHog integration skill
+# Agent skills
 
-An agent skill for adding production-ready PostHog analytics and observability to web, full-stack, serverless, edge, and AI applications.
+My public collection of reusable agent skills. Each skill lives in its own folder under `skills/` and can be installed independently.
 
-It guides an agent through stack discovery, browser and backend instrumentation, identity continuity, first-party ingestion, session replay, error tracking, performance monitoring, AI traces, deployment configuration, and verification.
+## Available skills
+
+### `integrate-posthog`
+
+Add production-ready PostHog analytics and observability to web, full-stack, serverless, edge, and AI applications. It covers stack discovery, browser and backend instrumentation, identity continuity, first-party ingestion, session replay, error tracking, performance monitoring, AI traces, deployment configuration, and verification.
 
 ## Install
 
-Clone this repository, then copy `skills/integrate-posthog` into your agent's personal skills directory.
+Clone this repository, then copy the skill you want into your agent's personal skills directory.
 
 Codex:
 
