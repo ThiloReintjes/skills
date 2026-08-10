@@ -6,8 +6,8 @@
     "name": "Thilo Reintjes",
     "url": "https://github.com/ThiloReintjes"
   },
-  "repository": "https://github.com/ThiloReintjes/agent-skills",
+  "repository": "https://github.com/ThiloReintjes/skills",
   "license": "MIT",
-  "keywords": ["agent-skills", "engineering", "posthog"],
+  "keywords": ["skills", "engineering", "posthog"],
   "skills": ["./skills/integrate-posthog"]
 }

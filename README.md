@@ -7,13 +7,13 @@ Small, practical agent skills I use in real projects.
 Codex and other agents:
 
 ```sh
-npx skills@latest add ThiloReintjes/agent-skills
+npx skills@latest add ThiloReintjes/skills
 ```
 
 Claude Code:
 
 ```text
-/plugin marketplace add ThiloReintjes/agent-skills
+/plugin marketplace add ThiloReintjes/skills
 /plugin install thilo-skills@thilo-skills
 ```
 

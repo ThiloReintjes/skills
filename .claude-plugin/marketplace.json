@@ -10,7 +10,7 @@
       "name": "thilo-skills",
       "source": "./",
       "description": "A concise collection of practical agent skills.",
-      "keywords": ["agent-skills", "engineering", "posthog"]
+      "keywords": ["skills", "engineering", "posthog"]
     }
   ]
 }
