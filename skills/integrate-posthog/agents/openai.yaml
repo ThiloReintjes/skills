@@ -1,0 +1,4 @@
+interface:
+  display_name: "Integrate PostHog"
+  short_description: "Add complete PostHog observability to any app"
+  default_prompt: "Use $integrate-posthog to add full PostHog analytics to this project with the project token <POSTHOG_PROJECT_API_KEY>."
