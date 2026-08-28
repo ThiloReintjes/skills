@@ -1,71 +1,98 @@
 ---
 name: integrate-posthog
-description: Integrate or upgrade PostHog across a web, full-stack, serverless, edge, or AI application. Use when adding product analytics, identity tracking, session replay, error tracking, performance monitoring, first-party ingestion, backend events, or AI observability with PostHog.
+description: Integrate or upgrade PostHog analytics and observability across browser, backend, serverless, and AI applications. Use for instrumentation, identity, replay, first-party ingestion, delivery reliability, dashboards, and operational alerts.
 ---
 
 # Integrate PostHog
 
-Implement one production-ready observability path adapted to the repository. Prefer current official PostHog SDKs and guidance over copied framework snippets.
+Implement production-ready observability adapted to the repository. For an upgrade, preserve working instrumentation and limit changes to the requested surfaces; for a full integration, account for every applicable surface below. Prefer current official PostHog SDKs and guidance over copied framework snippets.
 
 ## 1. Establish the contract
 
 1. Read the repository instructions and inspect its package managers, frontend, backend, authentication, AI providers, runtime lifecycle, infrastructure, deployment, CSP, and existing telemetry.
 2. Locate the supplied PostHog project token in the request or environment. Accept a public `phc_` ingestion token. Treat any `phx_` personal API key as privileged server-only configuration, never as the browser token.
 3. Determine the PostHog region and ingestion/UI hosts from project configuration. Request the missing value only when choosing incorrectly would send data to another region.
-4. Consult the current official PostHog documentation for every detected framework, SDK, and runtime before choosing integration points.
+4. Start from the [SDK/framework index](https://posthog.com/docs/libraries). For each in-scope surface, open the documentation linked at its step during this run; read only the detected framework, runtime, and provider guides.
 
-Finish when every applicable surface—browser, server, edge/serverless, auth, AI, proxy, deployment, and source maps—has an explicit implementation location or is recorded as not applicable.
+This skill defines coverage and reliability goals; current docs define SDK options, defaults, API schemas, and product limits. Match guidance to installed SDK versions, resolving mismatches through official SDK source/release notes before choosing an implementation. If a link moves, find its replacement through the [docs index](https://posthog.com/docs). Record unavailable documentation or unresolved compatibility as unverified rather than guessing.
+
+Finish when each in-scope surface has an implementation location, or a recorded reason it does not apply. Dashboard mutations, alert subscriptions, and production probes require appropriate access and authorization; missing access becomes a specific handoff, not permission to expand scope.
 
 ## 2. Design the telemetry
 
-Define a compact `object_action` event taxonomy for the product's real acquisition, activation, conversion, retention, and failure journeys. Give each event canonical, low-cardinality properties. Use one stable internal auth ID across browser events, backend events, errors, replays, and AI traces.
+Preserve existing event contracts; use a compact `object_action` taxonomy for new events. Distinguish user intent, server acceptance, terminal outcome, and user-visible completion where these can fail independently. For asynchronous work, carry an opaque operation ID through these milestones, plus attempt IDs when retries need separate measurement; keep breakdown properties low-cardinality.
 
-Create a typed analytics boundary owned by the observability layer. Route feature code through it instead of scattering SDK configuration or raw capture calls.
+Use one trusted internal auth ID across browser events, backend events, errors, replays, and AI traces; mutable email is a person property, not a join key. Carry the anonymous browser identity into backend events before authentication. Keep sampled funnels distinct from complete operational counts.
+
+When identity is in scope, read [person properties](https://posthog.com/docs/product-analytics/person-properties) and inspect the app's auth, user/account models, billing, onboarding, and acquisition data. Actively enrich profiles with available attributes that explain who users are and what drives their behavior. Send `email` and `name` whenever available; include relevant signup, verification, role, organization, plan/subscription, locale, onboarding, and acquisition attributes. These are examples, not a fixed field list. Map each property to an authoritative source and update trigger; leave unavailable values absent rather than inventing placeholders.
+
+Keep durable user traits on person profiles and action-specific context on events. Use the documented update/set-once semantics to distinguish current state from first-touch facts. Synchronize profile changes from the owning system, including backend-only billing or account changes, rather than waiting for another browser login. Avoid overwriting newer server-owned values with stale client snapshots.
+
+Route feature code through a typed analytics boundary. Make capture and flush failures non-fatal, bound delivery waits to the product's latency budget, and surface failures through bounded structured logs. Strip credentials, authorization headers, and raw secret values from telemetry payloads and diagnostic logs.
+
+Finish with event producers, correlation keys, canonical properties, and populations defined for each measured journey, plus user-property sources and update triggers wherever identity is in scope.
 
 ## 3. Implement browser coverage
 
-Initialize one fully enabled browser client at the earliest framework-supported application root with PostHog's current recommended defaults. Enable:
+When a browser is in scope, read its framework guide, [JavaScript configuration](https://posthog.com/docs/libraries/js/config), and [Browser lifecycle](references/browser-lifecycle.md) before selecting initialization, capture, and lifecycle behavior.
 
-- autocapture, route-aware pageviews, and page leaves without duplicates;
-- session replay, heatmaps, dead-click detection, and performance/Web Vitals;
-- automatic exceptions plus explicit capture from framework error boundaries;
-- authenticated-user identification with useful person properties;
-- anonymous-to-authenticated history continuity through PostHog's supported identity flow;
-- reset on logout.
+Initialize one fully enabled browser client at the earliest framework-supported application root with PostHog's current recommended defaults. Enable autocapture, route-aware pageviews/page leaves, session replay, heatmaps, dead-click detection, performance/Web Vitals, automatic exceptions, and explicit framework error-boundary capture. Assign one owner per automatic event to avoid duplicates.
 
 Run full capture immediately. Do not add consent gating or a cookie banner.
 
+Finish when the applicable lifecycle checks in the reference pass and the enabled browser products deliver events.
+
 ## 4. Add first-party ingestion
 
-Before production, route PostHog ingestion and required assets through a same-origin path or subdomain supported by the existing hosting layer. Point the browser SDK's `api_host` at it and keep `ui_host` pointed at the correct PostHog app region.
+When browser ingestion is in scope, read the [reverse-proxy deployment guide](https://posthog.com/docs/advanced/proxy) for the hosting provider. Route ingestion and required assets through a supported same-origin path or subdomain before production. Point the browser SDK's `api_host` at it and keep `ui_host` pointed at the correct PostHog app region.
 
 Forward only required methods, paths, query strings, bodies, and headers. Preserve client attribution where the trusted hosting boundary supplies it. Exclude the proxy path from authentication, localization, redirects, caching rules that break ingestion, and application middleware. Update CSP for SDK workers and any resources not served through the proxy.
 
+Verify event and asset delivery through the actual hosting path; a local rewrite passing is not proof that the deployed adapter supports it.
+
 ## 5. Add server coverage
 
-When server code exists:
+When server code exists, read its runtime guide from the SDK index for capture, GeoIP, and flush/shutdown behavior, plus the matching [Error Tracking installation](https://posthog.com/docs/error-tracking/installation) guide. Then:
 
 - use the official runtime-appropriate SDK behind a singleton or lifecycle-owned wrapper;
-- attach the same distinct ID plus consistent `service`, `runtime`, and `environment` properties;
-- capture important server-confirmed business outcomes and handled/unhandled exceptions;
-- keep analytics failures from changing product behavior, while exposing delivery failures through bounded structured logs;
+- attach the same identity/correlation keys plus consistent `service`, `runtime`, and `environment` properties;
+- capture important server-confirmed business outcomes, including background jobs and webhooks where applicable;
+- cover outer request/job boundaries as well as caught failures returned as error responses; keep one exception owner per failure;
 - flush and shut down cleanly in long-lived processes;
-- use immediate capture or `flushAt: 1`, `flushInterval: 0`, and awaited shutdown as appropriate for short-lived or serverless runtimes.
+- use the SDK's runtime-supported immediate delivery or awaited flush/shutdown for short-lived runtimes, including early returns and failure paths.
 
-Attribute location to the client only from a trusted proxy header; otherwise disable GeoIP on server-originated events so the datacenter is not mistaken for the user.
+Attribute location using the client IP supplied by a trusted hosting boundary. Otherwise disable GeoIP so the datacenter is not mistaken for the user. Webhook/provider IPs are not user IPs.
+
+Verify boundary coverage across in-scope routes/workers and assert delivery before termination without changing business outcomes when PostHog is unavailable.
 
 ## 6. Add AI observability
 
-When the product calls LLM or embedding APIs, use PostHog's official provider wrapper where available. Trace every generation and embedding, and add spans for retrieval, reranking, tool calls, and other material stages. Carry one trace ID through the operation and one session ID through the conversation; link both to the browser distinct ID and replay session where supported.
+When the product calls LLM or embedding APIs, read the matching [AI provider installation guide](https://posthog.com/docs/ai-observability/installation) and [trace documentation](https://posthog.com/docs/ai-observability/traces). Use the official wrapper where available. Trace generations and embeddings, with spans for material stages such as retrieval, tool calls, and retries. Carry an operation trace ID through concurrent/background stages and a session ID through conversations; link user/replay identities where supported.
 
-Capture inputs, outputs, model, latency, time to first token, usage, cost, and errors. Redact credentials, authorization headers, payment data, raw secret values, and any repository-defined prohibited fields before capture.
+Capture inputs, outputs, model, usage, cost, latency, time to first token where available, and errors with useful diagnostic context. Include tool inputs/results and intermediate stage outputs where supported.
 
-## 7. Configure and prove delivery
+Verify emitted payloads include generation content and trace linkage, and prove the provider call still works when telemetry is disabled or fails.
 
-1. Add documented environment placeholders, deployment bindings/secrets, proxy infrastructure, and source-map upload using repository conventions. The browser `phc_` token is public configuration; privileged management keys remain secret.
-2. Add focused tests for initialization idempotency, route pageview uniqueness, identify/reset, anonymous identity continuity, canonical properties, proxy routing, exception capture, and serverless delivery. Cover AI trace/session propagation when applicable.
+## 7. Turn telemetry into monitoring
+
+Before configuring monitors, read [funnels](https://posthog.com/docs/product-analytics/funnels) and [alerts](https://posthog.com/docs/alerts) for current query semantics, supported metrics, and notification behavior. For managed-resource automation, follow the [API reference](https://posthog.com/docs/api) to the relevant resource endpoints and verify their current request schemas.
+
+For a full integration, create or update saved funnels/dashboards for the core journey and actionable operational alerts. For a targeted upgrade, update the monitors affected by the changed event contract. Use existing acquisition dimensions to expose meaningful drop-offs rather than inventing product-specific dashboards.
+
+- Pair starts with expected terminal outcomes. Where server success can fail to reach the user, monitor user-visible completion separately. Use operation-level correlation for job reliability; a person-level funnel alone can join unrelated attempts.
+- Define each metric's population, denominator, environment, time window, and expected delay. Account for sampling, retries, ingestion lag, and normal abandonment before labeling missing events as failures.
+- Choose thresholds and minimum volumes from traffic and failure impact; give every alert an owner and response. Check current alert-type support, metric semantics, evaluation windows, and project limits instead of copying fixed values.
+- Keep managed definitions reproducible using repository conventions, with dry-run previews and idempotent updates that preserve unrelated dashboard/alert resources. Separate production metrics from test probes. Use a scoped test alert or test environment to prove notification delivery.
+
+Finish with verified queries, alert evaluation, and an authorized notification test, or an explicit pending item naming the missing access, owner/decision, and verification step. Event ingestion alone is not operational monitoring.
+
+## 8. Configure and prove delivery
+
+1. Add documented environment placeholders, deployment bindings/secrets, proxy infrastructure, and source-map upload using repository conventions. For source maps, read the current [upload guide](https://posthog.com/docs/error-tracking/upload-source-maps) for the build tool before choosing CLI commands or release linkage. The browser `phc_` token is public configuration; privileged management keys remain secret.
+2. Add focused tests for the applicable checks above: serialized payloads/secret filtering, proxy routing, failure isolation and time bounds, exception ownership, terminal-event correlation, and runtime delivery. Exercise the browser lifecycle reference and AI trace propagation when applicable.
 3. Run the repository's complete relevant lint, formatting, type-check, test, build, and infrastructure validation commands; repair integration-caused failures.
-4. Perform a development or production-safe smoke event when configuration permits. Verify browser events, server events, replays, exceptions, and AI traces in PostHog or state precisely which external verification remains.
-5. Report changed files, configuration names, events, identity behavior, proxy route, verification results, and any remaining dashboard-side setup.
+4. Perform authorized, synthetic end-to-end probes when configuration permits. Inspect received events, replays, exceptions, and AI traces for correct region, identity/GeoIP, correlation, diagnostic content, and secret filtering—not merely event presence. Include a failing path and a user-visible successful outcome.
+5. For person profiles with email or name, verify or configure [Person display name](https://posthog.com/docs/product-analytics/person-properties#person-display-name) to use a readable attribute while retaining the stable internal `distinct_id`. Verify a representative user can be found by their captured email/name, has a readable label and the mapped profile attributes, and keeps the same identity after profile updates. If neither attribute exists, retain the ID label and report the unavailable enrichment. Missing project-setting access is an explicit handoff, not a completed display-name check.
+6. Report changed files, configuration names, event contracts, user-property mappings, display-name verification, proxy route, monitor links or definitions, verification evidence, and specific external handoffs. Include consulted documentation URLs and SDK versions, noting any compatibility gaps. Distinguish code complete from live delivery and notification verification.
 
-Completion requires every applicable surface to be implemented and every locally verifiable check to pass. A package installation or isolated `capture()` call alone is incomplete.
+Completion requires every in-scope surface to be implemented and every locally verifiable check to pass; external verification gaps remain explicitly pending. A package installation or isolated `capture()` call alone is incomplete.
