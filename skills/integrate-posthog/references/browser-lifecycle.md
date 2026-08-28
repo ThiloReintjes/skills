@@ -4,7 +4,7 @@ Apply the branches supported by the application and requested scope. Use the ins
 
 ## Authenticated identity transitions
 
-Read [identification](https://posthog.com/docs/product-analytics/identify) and [person properties](https://posthog.com/docs/product-analytics/person-properties) before choosing identify/reset and property-update APIs. Build identity from the authoritative auth source. Treat identity synchronization as transitions, not just a login callback:
+Read [identification](https://posthog.com/docs/product-analytics/identify) before choosing identify/reset APIs. Build identity from the authoritative auth source and attach the user-property mapping defined in the telemetry design. Treat identity synchronization as transitions, not just a login callback:
 
 | Transition | Required behavior |
 |---|---|
@@ -16,7 +16,7 @@ Read [identification](https://posthog.com/docs/product-analytics/identify) and [
 
 Observe profile changes even when the UID stays the same. Suppress redundant updates using the identity plus relevant properties, not UID alone. Keep email out of join keys and avoid treating form inputs or untrusted webhook metadata as ownership proof.
 
-Test the applicable transitions and emitted properties, including explicit clearing of removed attributes and direct account switches. An attempted identify while capture is unavailable must not mark synchronization complete.
+Test the applicable transitions and emitted properties: available email/name and mapped attributes arrive, missing values do not erase known data, explicit removals clear stale properties, and account switches do not carry A's properties onto B. An attempted identify while capture is unavailable must not mark synchronization complete.
 
 ## Intent before navigation
 

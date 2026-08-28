@@ -24,9 +24,13 @@ Preserve existing event contracts; use a compact `object_action` taxonomy for ne
 
 Use one trusted internal auth ID across browser events, backend events, errors, replays, and AI traces; mutable email is a person property, not a join key. Carry the anonymous browser identity into backend events before authentication. Keep sampled funnels distinct from complete operational counts.
 
+When identity is in scope, read [person properties](https://posthog.com/docs/product-analytics/person-properties) and inspect the app's auth, user/account models, billing, onboarding, and acquisition data. Actively enrich profiles with available attributes that explain who users are and what drives their behavior. Send `email` and `name` whenever available; include relevant signup, verification, role, organization, plan/subscription, locale, onboarding, and acquisition attributes. These are examples, not a fixed field list. Map each property to an authoritative source and update trigger; leave unavailable values absent rather than inventing placeholders.
+
+Keep durable user traits on person profiles and action-specific context on events. Use the documented update/set-once semantics to distinguish current state from first-touch facts. Synchronize profile changes from the owning system, including backend-only billing or account changes, rather than waiting for another browser login. Avoid overwriting newer server-owned values with stale client snapshots.
+
 Route feature code through a typed analytics boundary. Make capture and flush failures non-fatal, bound delivery waits to the product's latency budget, and surface failures through bounded structured logs. Strip credentials, authorization headers, and raw secret values from telemetry payloads and diagnostic logs.
 
-Finish with event producers, correlation keys, canonical properties, and populations defined for each measured journey.
+Finish with event producers, correlation keys, canonical properties, and populations defined for each measured journey, plus user-property sources and update triggers wherever identity is in scope.
 
 ## 3. Implement browser coverage
 
@@ -88,6 +92,7 @@ Finish with verified queries, alert evaluation, and an authorized notification t
 2. Add focused tests for the applicable checks above: serialized payloads/secret filtering, proxy routing, failure isolation and time bounds, exception ownership, terminal-event correlation, and runtime delivery. Exercise the browser lifecycle reference and AI trace propagation when applicable.
 3. Run the repository's complete relevant lint, formatting, type-check, test, build, and infrastructure validation commands; repair integration-caused failures.
 4. Perform authorized, synthetic end-to-end probes when configuration permits. Inspect received events, replays, exceptions, and AI traces for correct region, identity/GeoIP, correlation, diagnostic content, and secret filtering—not merely event presence. Include a failing path and a user-visible successful outcome.
-5. Report changed files, configuration names, event contracts, proxy route, monitor links or definitions, verification evidence, and specific external handoffs. Include consulted documentation URLs and SDK versions, noting any compatibility gaps. Distinguish code complete from live delivery and notification verification.
+5. For person profiles with email or name, verify or configure [Person display name](https://posthog.com/docs/product-analytics/person-properties#person-display-name) to use a readable attribute while retaining the stable internal `distinct_id`. Verify a representative user can be found by their captured email/name, has a readable label and the mapped profile attributes, and keeps the same identity after profile updates. If neither attribute exists, retain the ID label and report the unavailable enrichment. Missing project-setting access is an explicit handoff, not a completed display-name check.
+6. Report changed files, configuration names, event contracts, user-property mappings, display-name verification, proxy route, monitor links or definitions, verification evidence, and specific external handoffs. Include consulted documentation URLs and SDK versions, noting any compatibility gaps. Distinguish code complete from live delivery and notification verification.
 
 Completion requires every in-scope surface to be implemented and every locally verifiable check to pass; external verification gaps remain explicitly pending. A package installation or isolated `capture()` call alone is incomplete.
