@@ -2,25 +2,17 @@
 
 Apply the branches supported by the application and requested scope. Use the installed SDK's documented APIs; these are behavioral requirements, not framework-specific snippets.
 
-## Consent and capture ownership
-
-When collection is consent-gated, connect to the existing consent mechanism. Gate automatic capture and persistence as well as explicit events. Grant after login must identify the current user; revoke must stop capture/replay and clear or disable persistence according to policy, including after reload. Resetting identity alone is not a durable opt-out. Keep disclosures accurate when adding identified properties.
-
-If the established policy permits essential operational errors independently of behavioral analytics, isolate that channel's configuration: memory-only persistence, no person profiles or GeoIP, and only approved exception fields. Keep replay, autocapture, pageviews, and other unrelated products disabled on that channel. A separate named client is one option, not a requirement for every app. Calling telemetry “operational” does not itself authorize consent-free collection.
-
-Verify denied, granted, revoked, and re-granted states using actual SDK calls and storage/network behavior. In a split setup, confirm each channel obeys its own policy and enabling analytics does not duplicate exceptions.
-
 ## Authenticated identity transitions
 
 Build identity from the authoritative auth source. Use the SDK's supported anonymous-to-identified flow. Treat identity synchronization as transitions, not just a login callback:
 
 | Transition | Required behavior |
 |---|---|
-| Anonymous → user A | Identify A when permitted, preserving eligible anonymous history. |
-| A → same A, changed profile | Update permitted mutable properties, including removal and verification changes. |
+| Anonymous → user A | Identify A as soon as authentication resolves, preserving anonymous history. |
+| A → same A, changed profile | Update mutable person properties, including removal and verification changes. |
 | A → user B without logout | Reset A's analytics identity before identifying B. |
 | A → signed out | Reset identity and any cached synchronization state. |
-| Login before consent or SDK readiness | Retry current identity when capture becomes available. |
+| Login before SDK readiness | Retry current identity when the SDK becomes available. |
 
 Observe profile changes even when the UID stays the same. Suppress redundant updates using the identity plus relevant properties, not UID alone. Keep email out of join keys and avoid treating form inputs or untrusted webhook metadata as ownership proof.
 
