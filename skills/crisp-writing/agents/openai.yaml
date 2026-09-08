@@ -1,0 +1,4 @@
+interface:
+  display_name: "Crisp Writing"
+  short_description: "Clear arguments, concise prose, and useful decisions"
+  default_prompt: "Use $crisp-writing to turn these notes into a clear, concise document for the intended reader."

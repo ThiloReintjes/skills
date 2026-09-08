@@ -9,5 +9,5 @@
   "repository": "https://github.com/ThiloReintjes/skills",
   "license": "MIT",
   "keywords": ["skills", "engineering", "posthog"],
-  "skills": ["./skills/integrate-posthog"]
+  "skills": ["./skills/integrate-posthog", "./skills/crisp-writing"]
 }

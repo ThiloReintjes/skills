@@ -19,6 +19,7 @@ Claude Code:
 
 ## Skills
 
+- [`crisp-writing`](skills/crisp-writing/SKILL.md) — Write clear, concise documents and presentation storylines that preserve evidence and voice.
 - [`integrate-posthog`](skills/integrate-posthog/SKILL.md) — Add full-stack PostHog analytics, error tracking, session replay, and AI observability.
 
 ## License
