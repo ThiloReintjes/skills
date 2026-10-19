@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Review"
+  short_description: "Review loop on gpt-6.1-sol until no P0–P2 findings remain"
+  default_prompt: "Use $codex-review to review this branch against origin/main and fix findings until the review is clean."
